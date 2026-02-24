@@ -94,11 +94,11 @@ object LocalDeployPlugin extends AutoPlugin {
 
   private case class DeployCtx(
     stageDir: Path,
-    pName:    String,
+    pName: String,
     pVersion: String,
-    pCommit:  String,
-    pTime:    String,
-    log:      ManagedLogger
+    pCommit: String,
+    pTime: String,
+    log: ManagedLogger
   ) {
     def dirName: String = s"$pName-$pVersion-$pTime-$pCommit"
   }
@@ -106,17 +106,22 @@ object LocalDeployPlugin extends AutoPlugin {
   private val deployCtx: Def.Initialize[Task[DeployCtx]] = Def.task {
     DeployCtx(
       stageDir = (Universal / stage).value.toPath,
-      pName    = name.value,
+      pName = name.value,
       pVersion = version.value,
-      pCommit  = git.gitHeadCommit.value.getOrElse("unknown").take(8),
-      pTime    = DATE_TIME_FORMATTER.format(LocalDateTime.now(ZoneOffset.UTC)),
-      log      = streams.value.log
+      pCommit = git.gitHeadCommit.value.getOrElse("unknown").take(8),
+      pTime = DATE_TIME_FORMATTER.format(LocalDateTime.now(ZoneOffset.UTC)),
+      log = streams.value.log
     )
   }
 
   private lazy val isWindows = System.getProperty("os.name").toLowerCase.contains("win")
 
-  private def staleInstallationsDef(deployRoot: Path, projectName: String, filter: Path => Boolean, log: ManagedLogger): Unit = {
+  private def staleInstallationsDef(
+    deployRoot: Path,
+    projectName: String,
+    filter: Path => Boolean,
+    log: ManagedLogger
+  ): Unit = {
     if (Files.exists(deployRoot) && Files.isDirectory(deployRoot)) {
       val thirtyDaysAgo = Instant.now().minus(30, ChronoUnit.DAYS)
       val stream        = Files.list(deployRoot)
@@ -156,7 +161,9 @@ object LocalDeployPlugin extends AutoPlugin {
       finally stream.close()
     }
     copyDir(stageDir, destDir)
-    log.info(s"Deployed  : ${scala.Console.CYAN}$destDir${scala.Console.RESET}  (${scala.Console.GREEN}${formatBytes(dirSize(destDir))}${scala.Console.RESET})")
+    log.info(
+      s"Deployed  : ${scala.Console.CYAN}$destDir${scala.Console.RESET}  (${scala.Console.GREEN}${formatBytes(dirSize(destDir))}${scala.Console.RESET})"
+    )
   }
 
   private def symlinks(linkRoot: Path, stageBinDir: Path, destBinDir: Path, isWindows: Boolean): List[(Path, Path)] = {
@@ -177,12 +184,20 @@ object LocalDeployPlugin extends AutoPlugin {
     } else Nil
   }
 
-  private def symlinkBinary(linkRoot: Path, stageBinDir: Path, destBinDir: Path, isWindows: Boolean, log: ManagedLogger): Unit = {
+  private def symlinkBinary(
+    linkRoot: Path,
+    stageBinDir: Path,
+    destBinDir: Path,
+    isWindows: Boolean,
+    log: ManagedLogger
+  ): Unit = {
     Files.createDirectories(linkRoot)
     symlinks(linkRoot, stageBinDir, destBinDir, isWindows).foreach { case (link, bin) =>
       if (Files.exists(link) || Files.isSymbolicLink(link)) Files.delete(link)
       Files.createSymbolicLink(link, bin)
-      log.info(s"Linked    : ${scala.Console.CYAN}$link${scala.Console.RESET}  →  ${scala.Console.CYAN}$bin${scala.Console.RESET}")
+      log.info(
+        s"Linked    : ${scala.Console.CYAN}$link${scala.Console.RESET}  →  ${scala.Console.CYAN}$bin${scala.Console.RESET}"
+      )
     }
   }
 
@@ -190,7 +205,9 @@ object LocalDeployPlugin extends AutoPlugin {
     val currentLink = appDir.resolve("current")
     if (Files.exists(currentLink) || Files.isSymbolicLink(currentLink)) Files.delete(currentLink)
     Files.createSymbolicLink(currentLink, destDir)
-    log.info(s"Current   : ${scala.Console.CYAN}$currentLink${scala.Console.RESET}  →  ${scala.Console.CYAN}$destDir${scala.Console.RESET}")
+    log.info(
+      s"Current   : ${scala.Console.CYAN}$currentLink${scala.Console.RESET}  →  ${scala.Console.CYAN}$destDir${scala.Console.RESET}"
+    )
   }
 
   private def linkSharedDirs(appDir: Path, destDir: Path, log: ManagedLogger): Unit =
@@ -200,7 +217,9 @@ object LocalDeployPlugin extends AutoPlugin {
       val link = destDir.resolve(dirName)
       if (Files.exists(link) || Files.isSymbolicLink(link)) Files.delete(link)
       Files.createSymbolicLink(link, shared)
-      log.info(s"Shared    : ${scala.Console.CYAN}$link${scala.Console.RESET}  →  ${scala.Console.CYAN}$shared${scala.Console.RESET}")
+      log.info(
+        s"Shared    : ${scala.Console.CYAN}$link${scala.Console.RESET}  →  ${scala.Console.CYAN}$shared${scala.Console.RESET}"
+      )
     }
 
   // ── task ─────────────────────────────────────────────────────────────────
@@ -256,12 +275,18 @@ object LocalDeployPlugin extends AutoPlugin {
 
     log.info(s"Stage path  : ${scala.Console.CYAN}${stageDir.toAbsolutePath}${scala.Console.RESET}")
     log.info(s"Deploy path : ${scala.Console.YELLOW}${destDir.toAbsolutePath}${scala.Console.RESET}")
-    log.info(s"Current link: ${scala.Console.YELLOW}$currentLink${scala.Console.RESET}  →  ${scala.Console.YELLOW}$destDir${scala.Console.RESET}")
+    log.info(
+      s"Current link: ${scala.Console.YELLOW}$currentLink${scala.Console.RESET}  →  ${scala.Console.YELLOW}$destDir${scala.Console.RESET}"
+    )
     SHARED_DIRS.foreach { d =>
-      log.info(s"Shared dir  : ${scala.Console.YELLOW}${destDir.resolve(d)}${scala.Console.RESET}  →  ${scala.Console.YELLOW}${appDir.resolve(d)}${scala.Console.RESET}")
+      log.info(
+        s"Shared dir  : ${scala.Console.YELLOW}${destDir.resolve(d)}${scala.Console.RESET}  →  ${scala.Console.YELLOW}${appDir.resolve(d)}${scala.Console.RESET}"
+      )
     }
     symlinks(linkRoot, stageDir.resolve("bin"), destDir.resolve("bin"), isWindows).foreach { case (link, d) =>
-      log.info(s"To be linked: ${scala.Console.YELLOW}$link${scala.Console.RESET}  →  ${scala.Console.YELLOW}$d${scala.Console.RESET}")
+      log.info(
+        s"To be linked: ${scala.Console.YELLOW}$link${scala.Console.RESET}  →  ${scala.Console.YELLOW}$d${scala.Console.RESET}"
+      )
     }
   }
 
@@ -269,7 +294,7 @@ object LocalDeployPlugin extends AutoPlugin {
     import sbt.complete.DefaultParsers._
 
     val deployArgOpt = (Space.? ~> StringBasic.?).parsed
-    val ctx = deployCtx.value
+    val ctx          = deployCtx.value
     import ctx.{pName, log}
 
     lazy val deployRootFromEnv = getEnv(DEPLOY_PATH_ENV_NAME, log)
