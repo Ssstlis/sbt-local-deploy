@@ -70,8 +70,8 @@ The resulting on-disk layout for an app called `foo` deployed to `/opt/releases`
     │   └── logs -> /opt/releases/foo/logs/                   ← symlink
     └── foo-0.9.0-2024-05-01_09-00-00-deadbeef/
         ├── ...
-        ├── conf -> /opt/releases/foo/conf/
-        └── logs -> /opt/releases/foo/logs/
+        ├── conf -> /opt/releases/foo/conf/                   ← symlink
+        └── logs -> /opt/releases/foo/logs/                   ← symlink
 ```
 
 Each release directory is named:
