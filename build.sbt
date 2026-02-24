@@ -22,7 +22,7 @@ ThisBuild / scmInfo    := Some(
 ThisBuild / version := {
   val envVersion = sys.env.getOrElse("APP_VERSION", "-SNAPSHOT")
   if (envVersion.endsWith("SNAPSHOT")) {
-    baseVersion.value + "-" + git.gitHeadCommit.value.getOrElse("").take(8)
+    baseVersion.value + "-" + git.gitHeadCommit.value.getOrElse("").take(8) + "-SNAPSHOT"
   } else envVersion
 }
 ThisBuild / versionScheme := Some("pvp")
