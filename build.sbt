@@ -6,7 +6,7 @@ ThisBuild / sbtPlugin := true
 
 ThisBuild / organization     := "io.github.ssstlis"
 ThisBuild / organizationName := "Ssstlis"
-ThisBuild / name             := "sbt-local-deploy"
+name                         := "sbt-local-deploy"
 
 addSbtPlugin("com.github.sbt"   % "sbt-native-packager" % "1.11.7")
 addSbtPlugin("com.typesafe.sbt" % "sbt-git"             % "1.0.0")
@@ -19,12 +19,6 @@ ThisBuild / scmInfo    := Some(
   ScmInfo(url("https://github.com/Ssstlis/sbt-local-deploy"), "git@github.com:Ssstlis/sbt-local-deploy.git")
 )
 
-ThisBuild / version := {
-  val envVersion = sys.env.getOrElse("APP_VERSION", "-SNAPSHOT")
-  if (envVersion.endsWith("SNAPSHOT")) {
-    baseVersion.value + "-" + git.gitHeadCommit.value.getOrElse("").take(8) + "-SNAPSHOT"
-  } else envVersion
-}
 ThisBuild / versionScheme := Some("pvp")
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
