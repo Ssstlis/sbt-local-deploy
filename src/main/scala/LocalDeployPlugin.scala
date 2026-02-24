@@ -14,7 +14,8 @@ import scala.collection.JavaConverters.*
 object LocalDeployPlugin extends AutoPlugin {
 
   private val DEPLOY_PATH_ENV_NAME = "SDP_SCALA_APP_DEPLOY_PATH"
-  private val LINK_PATH_ENV_NAME = "SDP_SCALA_APP_DEPLOY_LINK_PATH"
+  private val LINK_PATH_ENV_NAME   = "SDP_SCALA_APP_DEPLOY_LINK_PATH"
+  private val SHARED_DIRS          = List("logs", "conf")
 
   override def requires: Plugins = UniversalPlugin
   override def trigger           = noTrigger
@@ -23,23 +24,24 @@ object LocalDeployPlugin extends AutoPlugin {
     val deploy = inputKey[Unit](
       "Stage and deploy the distribution.\n" +
         "Usage: deploy <deployPath> <linkPath>\n" +
-        s"  deployPath — root dir, default value from env $DEPLOY_PATH_ENV_NAME; distributable is placed at <deployPath>/<name>-<version>/\n" +
+        s"  deployPath — root dir, default value from env $DEPLOY_PATH_ENV_NAME; distributable is placed at <deployPath>/<name>/<name>-<version>-<time>-<commit>/\n" +
+        s"               a 'current' symlink at <deployPath>/<name>/current is updated to point to the new release\n" +
         s"  linkPath   — dir where bin/* scripts are symlinked, default value from env $LINK_PATH_ENV_NAME"
     )
     val deployInfo = inputKey[Unit](
-      "Show where is installation would take, where to place, where to link.\n" +
-        "Usage: deploy <deployPath> <linkPath>\n" +
-        s"  deployPath — root dir, default value from env $DEPLOY_PATH_ENV_NAME; distributable is placed at <deployPath>/<name>-<version>/\n" +
+      "Show where the installation would take place, where to place, where to link.\n" +
+        "Usage: deployInfo <deployPath> <linkPath>\n" +
+        s"  deployPath — root dir, default value from env $DEPLOY_PATH_ENV_NAME; distributable is placed at <deployPath>/<name>/<name>-<version>-<time>-<commit>/\n" +
         s"  linkPath   — dir where bin/* scripts are symlinked, default value from env $LINK_PATH_ENV_NAME"
     )
     val staleInstallations = inputKey[Unit](
       "Shows stale installations (older than 30 days).\n" +
         "Usage: staleInstallations <deployPath>\n" +
-        s"  deployPath — root dir, default value from env $DEPLOY_PATH_ENV_NAME\n"
+        s"  deployPath — root dir, default value from env $DEPLOY_PATH_ENV_NAME; scans <deployPath>/<name>/\n"
     )
   }
 
-  import autoImport._
+  import autoImport.*
 
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     deploy             := deployTaskImpl.evaluated,
@@ -184,6 +186,23 @@ object LocalDeployPlugin extends AutoPlugin {
     }
   }
 
+  private def updateCurrentSymlink(appDir: Path, destDir: Path, log: ManagedLogger): Unit = {
+    val currentLink = appDir.resolve("current")
+    if (Files.exists(currentLink) || Files.isSymbolicLink(currentLink)) Files.delete(currentLink)
+    Files.createSymbolicLink(currentLink, destDir)
+    log.info(s"Current   : ${scala.Console.CYAN}$currentLink${scala.Console.RESET}  →  ${scala.Console.CYAN}$destDir${scala.Console.RESET}")
+  }
+
+  private def linkSharedDirs(appDir: Path, destDir: Path, log: ManagedLogger): Unit =
+    SHARED_DIRS.foreach { dirName =>
+      val shared = appDir.resolve(dirName)
+      Files.createDirectories(shared)
+      val link = destDir.resolve(dirName)
+      if (Files.exists(link) || Files.isSymbolicLink(link)) Files.delete(link)
+      Files.createSymbolicLink(link, shared)
+      log.info(s"Shared    : ${scala.Console.CYAN}$link${scala.Console.RESET}  →  ${scala.Console.CYAN}$shared${scala.Console.RESET}")
+    }
+
   // ── task ─────────────────────────────────────────────────────────────────
 
   private lazy val deployTaskImpl: Def.Initialize[InputTask[Unit]] = Def.inputTask {
@@ -199,16 +218,23 @@ object LocalDeployPlugin extends AutoPlugin {
 
     val deployRoot = Paths.get(deployArgOpt.getOrElse(deployRootFromEnv))
     val linkRoot   = Paths.get(linkPathOpt.getOrElse(linkRootFromEnv))
-    val destDir    = deployRoot.resolve(dirName)
+    val appDir     = deployRoot.resolve(pName)
+    val destDir    = appDir.resolve(dirName)
 
     // ── 1. Copy stageDir → destDir ──────────────────────────────────────────
     installApp(stageDir, destDir.resolve("bin"), log)
 
-    // ── 2. Symlink bin/* → linkRoot/ ────────────────────────────────────────
+    // ── 2. Update 'current' symlink → destDir ───────────────────────────────
+    updateCurrentSymlink(appDir, destDir, log)
+
+    // ── 3. Link shared dirs (logs, conf) into destDir ───────────────────────
+    linkSharedDirs(appDir, destDir, log)
+
+    // ── 4. Symlink bin/* → linkRoot/ ────────────────────────────────────────
     symlinkBinary(linkRoot, stageDir.resolve("bin"), destDir.resolve("bin"), isWindows, log)
 
-    // ── 3. Warn about stale deployments (> 30 days old) ─────────────────────
-    staleInstallationsDef(deployRoot, pName, _ != destDir, log)
+    // ── 5. Warn about stale deployments (> 30 days old) ─────────────────────
+    staleInstallationsDef(appDir, pName, _ != destDir, log)
   }
 
   private lazy val deployInfoTaskImpl: Def.Initialize[InputTask[Unit]] = Def.inputTask {
@@ -222,12 +248,18 @@ object LocalDeployPlugin extends AutoPlugin {
     lazy val deployRootFromEnv = getEnv(DEPLOY_PATH_ENV_NAME, log)
     lazy val linkRootFromEnv   = getEnv(LINK_PATH_ENV_NAME, log)
 
-    val deployRoot = Paths.get(deployArgOpt.getOrElse(deployRootFromEnv))
-    val linkRoot   = Paths.get(linkPathOpt.getOrElse(linkRootFromEnv))
-    val destDir    = deployRoot.resolve(ctx.dirName)
+    val deployRoot  = Paths.get(deployArgOpt.getOrElse(deployRootFromEnv))
+    val linkRoot    = Paths.get(linkPathOpt.getOrElse(linkRootFromEnv))
+    val appDir      = deployRoot.resolve(ctx.pName)
+    val destDir     = appDir.resolve(ctx.dirName)
+    val currentLink = appDir.resolve("current")
 
-    log.info(s"Stage path: ${scala.Console.CYAN}${stageDir.toAbsolutePath}${scala.Console.RESET}")
-    log.info(s"Deploy path: ${scala.Console.YELLOW}${destDir.toAbsolutePath}${scala.Console.RESET}")
+    log.info(s"Stage path  : ${scala.Console.CYAN}${stageDir.toAbsolutePath}${scala.Console.RESET}")
+    log.info(s"Deploy path : ${scala.Console.YELLOW}${destDir.toAbsolutePath}${scala.Console.RESET}")
+    log.info(s"Current link: ${scala.Console.YELLOW}$currentLink${scala.Console.RESET}  →  ${scala.Console.YELLOW}$destDir${scala.Console.RESET}")
+    SHARED_DIRS.foreach { d =>
+      log.info(s"Shared dir  : ${scala.Console.YELLOW}${destDir.resolve(d)}${scala.Console.RESET}  →  ${scala.Console.YELLOW}${appDir.resolve(d)}${scala.Console.RESET}")
+    }
     symlinks(linkRoot, stageDir.resolve("bin"), destDir.resolve("bin"), isWindows).foreach { case (link, d) =>
       log.info(s"To be linked: ${scala.Console.YELLOW}$link${scala.Console.RESET}  →  ${scala.Console.YELLOW}$d${scala.Console.RESET}")
     }
@@ -243,6 +275,7 @@ object LocalDeployPlugin extends AutoPlugin {
     lazy val deployRootFromEnv = getEnv(DEPLOY_PATH_ENV_NAME, log)
 
     val deployRoot = Paths.get(deployArgOpt.getOrElse(deployRootFromEnv))
-    staleInstallationsDef(deployRoot, pName, _ => true, log)
+    val appDir     = deployRoot.resolve(pName)
+    staleInstallationsDef(appDir, pName, _ => true, log)
   }
 }
