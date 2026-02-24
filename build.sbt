@@ -1,6 +1,8 @@
-import Key.*
-
 Global / onChangedBuildSource := ReloadOnSourceChanges
+Global / onLoad := (Global / onLoad).value.andThen { s =>
+  println(s"version: ${(ThisBuild / version).value}")
+  s
+}
 
 ThisBuild / sbtPlugin := true
 
@@ -18,6 +20,18 @@ ThisBuild / developers := List(Developer("Ssstlis", "Ivan Aristov", "ssstlis@pm.
 ThisBuild / scmInfo    := Some(
   ScmInfo(url("https://github.com/Ssstlis/sbt-local-deploy"), "git@github.com:Ssstlis/sbt-local-deploy.git")
 )
+
+ThisBuild / version := {
+  dynverGitDescribeOutput.value match {
+    case Some(out) if out.isSnapshot =>
+      val tag = out.ref.value.stripPrefix("v")
+      s"$tag+${out.commitSuffix.distance}-${out.commitSuffix.sha}-SNAPSHOT"
+    case Some(out) =>
+      out.ref.value.stripPrefix("v")
+    case None =>
+      "0.0.1-SNAPSHOT"
+  }
+}
 
 ThisBuild / versionScheme := Some("pvp")
 
