@@ -1,5 +1,5 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
-Global / onLoad := (Global / onLoad).value.andThen { s =>
+Global / onLoad               := (Global / onLoad).value.andThen { s =>
   println(s"version: ${(ThisBuild / version).value}")
   s
 }
