@@ -27,7 +27,7 @@ jobs:
 
       - uses: sbt/setup-sbt@v1
 
-      - uses: coursier/cache-action@v6
+      - uses: coursier/cache-action@v8
 
       - name: Check formatting
         run: sbt scalafmtCheckAll scalafmtSbtCheck
