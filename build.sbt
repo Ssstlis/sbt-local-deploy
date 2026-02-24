@@ -1,12 +1,14 @@
-import Key.*
-
 Global / onChangedBuildSource := ReloadOnSourceChanges
+Global / onLoad               := (Global / onLoad).value.andThen { s =>
+  println(s"version: ${(ThisBuild / version).value}")
+  s
+}
 
 ThisBuild / sbtPlugin := true
 
 ThisBuild / organization     := "io.github.ssstlis"
 ThisBuild / organizationName := "Ssstlis"
-ThisBuild / name             := "sbt-local-deploy"
+name                         := "sbt-local-deploy"
 
 addSbtPlugin("com.github.sbt"   % "sbt-native-packager" % "1.11.7")
 addSbtPlugin("com.typesafe.sbt" % "sbt-git"             % "1.0.0")
@@ -20,11 +22,17 @@ ThisBuild / scmInfo    := Some(
 )
 
 ThisBuild / version := {
-  val envVersion = sys.env.getOrElse("APP_VERSION", "-SNAPSHOT")
-  if (envVersion.endsWith("SNAPSHOT")) {
-    baseVersion.value + "-" + git.gitHeadCommit.value.getOrElse("").take(8) + "-SNAPSHOT"
-  } else envVersion
+  dynverGitDescribeOutput.value match {
+    case Some(out) if out.isSnapshot =>
+      val tag = out.ref.value.stripPrefix("v")
+      s"$tag+${out.commitSuffix.distance}-${out.commitSuffix.sha}-SNAPSHOT"
+    case Some(out) =>
+      out.ref.value.stripPrefix("v")
+    case None =>
+      "0.0.1-SNAPSHOT"
+  }
 }
+
 ThisBuild / versionScheme := Some("pvp")
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
