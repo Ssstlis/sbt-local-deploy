@@ -6,8 +6,6 @@ object Publish {
     description = "version prefix, it will be *the* version of module if branch is master"
   )
 
-  val publishName: SettingKey[String] = SettingKey(
-    label = "publishName",
-    description = "module name, it will be prefixed in the artifact name"
-  )
+  val publishName: SettingKey[String] =
+    SettingKey(label = "publishName", description = "module name, it will be prefixed in the artifact name")
 }
