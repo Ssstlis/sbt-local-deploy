@@ -1,4 +1,4 @@
-import com.typesafe.sbt.SbtGit.git
+import com.github.sbt.git.SbtGit.git
 import com.typesafe.sbt.packager.universal.UniversalPlugin
 import com.typesafe.sbt.packager.universal.UniversalPlugin.autoImport.*
 import sbt.*
