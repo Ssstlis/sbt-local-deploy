@@ -13,25 +13,9 @@ permissions:
   security-events: write
 
 jobs:
-  changes:
-    name: Detect changes
-    runs-on: ubuntu-latest
-    outputs:
-      src: ${{ steps.filter.outputs.src }}
-    steps:
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          filters: |
-            src:
-              - 'src/**'
-              - 'project/**'
-              - '*.sbt'
-
   analyze:
     name: Analyze
-    needs: changes
-    if: needs.changes.outputs.src == 'true' || github.event_name != 'pull_request'
+    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
