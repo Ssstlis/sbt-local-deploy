@@ -2,6 +2,10 @@
 
 An SBT plugin for local deployment of Scala applications. It packages your application into a versioned directory, manages symlinks for binary scripts, and helps track stale (old) installations.
 
+[![Continuous Integration](https://github.com/Ssstlis/sbt-local-deploy/actions/workflows/ci.yml/badge.svg)](https://github.com/Ssstlis/sbt-local-deploy/actions/workflows/ci.yml)
+[![Semgrep](https://github.com/Ssstlis/sbt-local-deploy/actions/workflows/semgrep.yml/badge.svg)](https://github.com/Ssstlis/sbt-local-deploy/actions/workflows/semgrep.yml)
+[![Sonatype Central](https://maven-badges.sml.io/sonatype-central/io.github.ssstlis/sbt-local-deploy_2.12_1.0/badge.svg)](https://maven-badges.sml.io/sonatype-central/io.github.ssstlis/sbt-local-deploy_2.12_1.0)
+
 ## Features
 
 - **Per-app subdirectory** — Each application gets its own folder (`<deployPath>/<name>/`); all releases live inside it
