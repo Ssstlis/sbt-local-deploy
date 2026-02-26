@@ -19,10 +19,9 @@ jobs:
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@v6
         with:
+          gpg_private_key: ${{ secrets.PGP_SECRET }}
+          passphrase: ${{ secrets.PGP_PASSPHRASE }}
           git_user_signingkey: true
-        env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
       - name: Launch Scala Steward
         uses: scala-steward-org/scala-steward-action@v2
         with:
