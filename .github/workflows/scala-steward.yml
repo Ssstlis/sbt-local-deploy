@@ -16,6 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Launch Scala Steward
     steps:
+      - uses: actions/checkout@v4
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@v6
         with:
