@@ -1,0 +1,1 @@
+- Ssstlis/sbt-local-deploy
