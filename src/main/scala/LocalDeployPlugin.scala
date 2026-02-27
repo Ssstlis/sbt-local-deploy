@@ -1,9 +1,7 @@
 import com.github.sbt.git.SbtGit.git
 import com.typesafe.sbt.packager.archetypes.JavaAppPackaging
-import com.typesafe.sbt.packager.archetypes.scripts.BashStartScriptPlugin.autoImport.{
-  bashScriptExtraDefines,
-  scriptClasspath
-}
+import com.typesafe.sbt.packager.archetypes.JavaAppPackaging.autoImport.scriptClasspath
+import com.typesafe.sbt.packager.archetypes.scripts.BashStartScriptPlugin.autoImport.bashScriptExtraDefines
 import com.typesafe.sbt.packager.universal.UniversalPlugin.autoImport.*
 import sbt.*
 import sbt.Keys.*
