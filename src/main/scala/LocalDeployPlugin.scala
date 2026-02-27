@@ -1,7 +1,8 @@
 import com.github.sbt.git.SbtGit.git
 import com.typesafe.sbt.packager.archetypes.JavaAppPackaging
 import com.typesafe.sbt.packager.archetypes.JavaAppPackaging.autoImport.scriptClasspath
-import com.typesafe.sbt.packager.archetypes.scripts.BashStartScriptPlugin.autoImport.bashScriptExtraDefines
+import com.typesafe.sbt.packager.archetypes.scripts.BashStartScriptPlugin
+import com.typesafe.sbt.packager.archetypes.scripts.BashStartScriptPlugin.autoImport.{bashScriptDefines, bashScriptExtraDefines}
 import com.typesafe.sbt.packager.universal.UniversalPlugin.autoImport.*
 import sbt.*
 import sbt.Keys.*
@@ -19,7 +20,7 @@ object LocalDeployPlugin extends AutoPlugin {
   private val LINK_PATH_ENV_NAME   = "SDP_SCALA_APP_DEPLOY_LINK_PATH"
   private val SHARED_DIRS          = List("logs", "conf")
 
-  override def requires: Plugins = JavaAppPackaging
+  override def requires: Plugins = JavaAppPackaging && BashStartScriptPlugin
   override def trigger           = noTrigger
 
   object autoImport {
@@ -46,14 +47,15 @@ object LocalDeployPlugin extends AutoPlugin {
   import autoImport.*
 
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
-    scriptClasspath := "conf" +: scriptClasspath.value,
-    bashScriptExtraDefines +=
+    scriptClasspath := "../conf" +: scriptClasspath.value,
+    bashScriptExtraDefines += {
       """if [ -f "${app_home}/../conf/jvm-args" ]; then
         |  while IFS= read -r line || [ -n "$line" ]; do
         |    case "$line" in '#'*|'') continue ;; esac
         |    addJava "$line"
         |  done < "${app_home}/../conf/jvm-args"
-        |fi""".stripMargin,
+        |fi""".stripMargin
+    },
     deploy             := deployTaskImpl.evaluated,
     deployInfo         := deployInfoTaskImpl.evaluated,
     staleInstallations := staleInstallationsTaskImpl.evaluated

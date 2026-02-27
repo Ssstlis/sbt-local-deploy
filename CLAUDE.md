@@ -35,6 +35,14 @@ The README is the primary user-facing documentation. It must never describe beha
 - The plugin requires `sbt-native-packager` to be present in consumer projects
 - Version is resolved from the `APP_VERSION` environment variable, falling back to `<git-commit>-SNAPSHOT`
 
+## Integration test script sync requirement
+
+The integration test logic lives in `integration-test.sh` (project root). The CI job in `.github/workflows/ci.yml` calls this script directly and must not duplicate its logic inline.
+
+When changing any integration test step (deploy paths, verification checks, config files copied, sbt commands), update `integration-test.sh` first — it is the source of truth. Then update `.github/workflows/ci.yml` only if the way the script is invoked changes (arguments, environment, setup steps).
+
+Never add inline test commands to the CI job — all test logic must stay in `integration-test.sh`.
+
 ## Commit hygiene
 
 - Use clear, descriptive commit messages
