@@ -1,4 +1,4 @@
-name         := "sdp-example"
+name         := "ldp-example"
 organization := "io.github.ssstlis"
 version      := "0.1.0"
 scalaVersion := "2.13.16"

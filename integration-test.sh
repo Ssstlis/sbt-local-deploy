@@ -19,7 +19,7 @@ echo "$OUTPUT"
 echo "$OUTPUT" | grep -qF -- "-Xmx256m"            || { echo "FAIL: JVM arg -Xmx256m not found";    exit 1; }
 echo "$OUTPUT" | grep -qF -- "hello"               || { echo "FAIL: CLI arg 'hello' not found";     exit 1; }
 echo "$OUTPUT" | grep -qF -- "world"               || { echo "FAIL: CLI arg 'world' not found";     exit 1; }
-echo "$OUTPUT" | grep -qF -- "sdp-example"         || { echo "FAIL: app.name not found in config"; exit 1; }
+echo "$OUTPUT" | grep -qF -- "ldp-example"         || { echo "FAIL: app.name not found in config"; exit 1; }
 echo "$OUTPUT" | grep -qF -- "Application started" || { echo "FAIL: log output not found";         exit 1; }
 
 echo "All checks passed."
