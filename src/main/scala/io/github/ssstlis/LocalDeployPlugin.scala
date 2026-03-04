@@ -24,33 +24,38 @@ object LocalDeployPlugin extends AutoPlugin {
   override def trigger           = allRequirements
 
   object autoImport {
-    val localDeployDeploy = inputKey[Unit](
+    val LocalDeploy = config("local-deploy")
+
+    val deploy = inputKey[Unit](
       "Stage and deploy the distribution.\n" +
-        "Usage: deploy <deployPath> <linkPath>\n" +
+        "Usage: LocalDeploy/deploy <deployPath> <linkPath>\n" +
         s"  deployPath — root dir, default value from env $DEPLOY_PATH_ENV_NAME; distributable is placed at <deployPath>/<name>/<name>-<version>-<time>-<commit>/\n" +
         s"               a 'current' symlink at <deployPath>/<name>/current is updated to point to the new release\n" +
         s"  linkPath   — dir where bin/* scripts are symlinked, default value from env $LINK_PATH_ENV_NAME"
     )
-    val localDeployDeployInfo = inputKey[Unit](
+    val deployInfo = inputKey[Unit](
       "Show where the installation would take place, where to place, where to link.\n" +
-        "Usage: deployInfo <deployPath> <linkPath>\n" +
+        "Usage: LocalDeploy/deployInfo <deployPath> <linkPath>\n" +
         s"  deployPath — root dir, default value from env $DEPLOY_PATH_ENV_NAME; distributable is placed at <deployPath>/<name>/<name>-<version>-<time>-<commit>/\n" +
         s"  linkPath   — dir where bin/* scripts are symlinked, default value from env $LINK_PATH_ENV_NAME"
     )
-    val localDeployStaleInstallations = inputKey[Unit](
+    val staleInstallations = inputKey[Unit](
       "Shows stale installations (older than 30 days).\n" +
-        "Usage: staleInstallations <deployPath>\n" +
+        "Usage: LocalDeploy/staleInstallations <deployPath>\n" +
         s"  deployPath — root dir, default value from env $DEPLOY_PATH_ENV_NAME; scans <deployPath>/<name>/\n"
     )
   }
 
   import autoImport.*
 
-  override def projectSettings: Seq[Def.Setting[_]] = Seq(
-    localDeployDeploy             := deployTaskImpl.evaluated,
-    localDeployDeployInfo         := deployInfoTaskImpl.evaluated,
-    localDeployStaleInstallations := staleInstallationsTaskImpl.evaluated
-  )
+  override def projectSettings: Seq[Def.Setting[_]] =
+    inConfig(LocalDeploy)(
+      Seq(
+        deploy             := deployTaskImpl.evaluated,
+        deployInfo         := deployInfoTaskImpl.evaluated,
+        staleInstallations := staleInstallationsTaskImpl.evaluated
+      )
+    )
 
   // ── helpers ──────────────────────────────────────────────────────────────
 

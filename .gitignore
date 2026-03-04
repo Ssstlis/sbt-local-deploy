@@ -45,4 +45,6 @@ build/
 .bsp/
 compare*
 
+.claude
+
 src/main/resources/application.conf

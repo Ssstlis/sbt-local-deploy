@@ -38,26 +38,34 @@ enablePlugins(LocalDeployPlugin)
 
 ## Usage
 
+All tasks are scoped under the `LocalDeploy` configuration:
+
+```
+sbt LocalDeploy/deploy
+sbt LocalDeploy/deployInfo
+sbt LocalDeploy/staleInstallations
+```
+
 ### Deploy
 
 Stage and deploy your application:
 
 ```
-sbt deploy
+sbt LocalDeploy/deploy
 ```
 
 Optionally pass paths as arguments:
 
 ```
-sbt "deploy /opt/myapp/releases /usr/local/bin"
+sbt "LocalDeploy/deploy /opt/myapp/releases /usr/local/bin"
 ```
 
 Or set them via environment variables:
 
-| Variable                      | Description                              |
-|-------------------------------|------------------------------------------|
-| `SDP_SCALA_APP_DEPLOY_PATH`   | Root directory where releases are placed |
-| `SDP_SCALA_APP_DEPLOY_LINK_PATH` | Directory where symlinks are created  |
+| Variable                   | Description                              |
+|----------------------------|------------------------------------------|
+| `LDP_APP_DEPLOY_PATH`      | Root directory where releases are placed |
+| `LDP_APP_DEPLOY_LINK_PATH` | Directory where symlinks are created     |
 
 The resulting on-disk layout for an app called `foo` deployed to `/opt/releases`:
 
@@ -89,7 +97,7 @@ Each release directory is named:
 Show where files will be deployed without making any changes:
 
 ```
-sbt deployInfo
+sbt LocalDeploy/deployInfo
 ```
 
 ### List stale installations
@@ -97,7 +105,7 @@ sbt deployInfo
 List deployments older than 30 days:
 
 ```
-sbt staleInstallations
+sbt LocalDeploy/staleInstallations
 ```
 
 ## How it works
