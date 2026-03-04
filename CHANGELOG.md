@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Bug Fixes
+
+- **`config("local-deploy")` → `config("LocalDeploy")`** (`LocalDeployPlugin.scala`, 2026-03-04): SBT resolves configuration scope names literally in the shell — the config was named `"local-deploy"` but all documented commands use `LocalDeploy/`. SBT could not find the task, producing `No such setting/task: LocalDeploy/deploy`. Fixed by renaming to `config("LocalDeploy")`.
+- **`integration-test.sh` fully corrected** (2026-03-04): The script had three bugs: (1) the SBT command used `sbt "deploy ..."` (unscoped) instead of `sbt "LocalDeploy/deploy ..."`; (2) `cp` destination paths and binary path used `sdp-example` instead of the actual app name `ldp-example`; (3) default temp dirs used the `sdp-` prefix instead of `ldp-`. All corrected.
+
 ### Build / Tooling
 
 - **scalafix fixed** (`build.sbt`, `.scalafix.conf`): `sbt scalafixAll` was failing with "No rules requested to run".

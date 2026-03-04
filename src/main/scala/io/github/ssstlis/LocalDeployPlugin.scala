@@ -8,8 +8,12 @@ import java.time.{Instant, LocalDateTime, ZoneOffset}
 import scala.collection.JavaConverters._
 
 import com.github.sbt.git.SbtGit.git
+import com.typesafe.sbt.packager.archetypes.JavaAppPackaging
+import com.typesafe.sbt.packager.archetypes.JavaAppPackaging.autoImport.scriptClasspath
+import com.typesafe.sbt.packager.archetypes.scripts.BashStartScriptPlugin
+import com.typesafe.sbt.packager.archetypes.scripts.BashStartScriptPlugin.autoImport.bashScriptExtraDefines
 import com.typesafe.sbt.packager.universal.UniversalPlugin
-import com.typesafe.sbt.packager.universal.UniversalPlugin.autoImport._
+import com.typesafe.sbt.packager.universal.UniversalPlugin.autoImport.{Universal, stage}
 import sbt.Keys._
 import sbt._
 import sbt.internal.util.ManagedLogger
@@ -20,11 +24,11 @@ object LocalDeployPlugin extends AutoPlugin {
   private val LINK_PATH_ENV_NAME   = "LDP_APP_DEPLOY_LINK_PATH"
   private val SHARED_DIRS          = List("logs", "conf")
 
-  override def requires: Plugins = UniversalPlugin
+  override def requires: Plugins = JavaAppPackaging && UniversalPlugin && BashStartScriptPlugin
   override def trigger           = allRequirements
 
   object autoImport {
-    val LocalDeploy = config("local-deploy")
+    val LocalDeploy = config("LocalDeploy")
 
     val deploy = inputKey[Unit](
       "Stage and deploy the distribution.\n" +
@@ -48,7 +52,17 @@ object LocalDeployPlugin extends AutoPlugin {
 
   import autoImport.*
 
-  override def projectSettings: Seq[Def.Setting[_]] =
+  override def projectSettings: Seq[Def.Setting[_]] = Seq(
+    scriptClasspath := "../conf" +: scriptClasspath.value,
+    bashScriptExtraDefines += {
+      """if [ -f "${app_home}/../conf/jvm-args" ]; then
+        |  while IFS= read -r line || [ -n "$line" ]; do
+        |    case "$line" in '#'*|'') continue ;; esac
+        |    addJava "$line"
+        |  done < "${app_home}/../conf/jvm-args"
+        |fi""".stripMargin
+    }
+  ) ++
     inConfig(LocalDeploy)(
       Seq(
         deploy             := deployTaskImpl.evaluated,
@@ -249,7 +263,7 @@ object LocalDeployPlugin extends AutoPlugin {
     val destDir    = appDir.resolve(dirName)
 
     // ── 1. Copy stageDir → destDir ──────────────────────────────────────────
-    installApp(stageDir, destDir.resolve("bin"), log)
+    installApp(stageDir, destDir, log)
 
     // ── 2. Update 'current' symlink → destDir ───────────────────────────────
     updateCurrentSymlink(appDir, destDir, log)
