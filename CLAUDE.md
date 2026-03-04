@@ -31,9 +31,15 @@ The README is the primary user-facing documentation. It must never describe beha
 
 ## Build
 
-- SBT version: 1.12.3 (see `project/build.properties`)
+- SBT version: 1.12.5 (see `project/build.properties`)
 - The plugin requires `sbt-native-packager` to be present in consumer projects
-- Version is resolved from the `APP_VERSION` environment variable, falling back to `<git-commit>-SNAPSHOT`
+- Version is resolved from git tags via `sbt-dynver`: tagged releases produce the tag version; snapshots produce `<tag>+<distance>-<sha>-SNAPSHOT`; no tags produce `0.0.1-SNAPSHOT`
+- Main plugin file: `src/main/scala/io/github/ssstlis/LocalDeployPlugin.scala`
+- Scalafix is configured with `semanticdbEnabled` and requires `-Ywarn-unused-import`; run with `sbt scalafixAll`
+
+## Documentation tracking
+
+When making changes to any documentation file (`README.md`, `CLAUDE.md`, or memory files), record the entry in `CHANGELOG.md` with the date, commit hash (if available), and a brief description of what was updated and why.
 
 ## Commit hygiene
 
