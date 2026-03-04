@@ -17,13 +17,23 @@ pull_request_rules:
               - or:
                   - files=project/build.properties
                   - files=project/plugins.sbt
+                  - files=build.sbt
           - body~=labels:.*semver-patch
           - "#approved-reviews-by>=1"
       - and:
           - check-success~=Test
+          - label != do-not-merge
     actions:
       merge:
-        method: rebase
+        method: squash
+        commit_message_template: |
+          {{ title }} (#{{ number }})
+          
+          {{ body }}
+          
+          {% for user in approved_reviews_by %}
+          Approved-By: {{user}}
+          {% endfor %}
 
   - name: Delete head branch after merge
     conditions:
