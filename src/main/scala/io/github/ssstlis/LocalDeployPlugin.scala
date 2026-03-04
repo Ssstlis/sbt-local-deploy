@@ -1,45 +1,51 @@
+package io.github.ssstlis
+
+import java.nio.file.{Files, Path, Paths, StandardCopyOption}
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
+import java.time.{Instant, LocalDateTime, ZoneOffset}
+
+import scala.collection.JavaConverters._
+
 import com.github.sbt.git.SbtGit.git
 import com.typesafe.sbt.packager.archetypes.JavaAppPackaging
 import com.typesafe.sbt.packager.archetypes.JavaAppPackaging.autoImport.scriptClasspath
 import com.typesafe.sbt.packager.archetypes.scripts.BashStartScriptPlugin
-import com.typesafe.sbt.packager.archetypes.scripts.BashStartScriptPlugin.autoImport.{bashScriptDefines, bashScriptExtraDefines}
-import com.typesafe.sbt.packager.universal.UniversalPlugin.autoImport.*
-import sbt.*
-import sbt.Keys.*
+import com.typesafe.sbt.packager.archetypes.scripts.BashStartScriptPlugin.autoImport.bashScriptExtraDefines
+import com.typesafe.sbt.packager.universal.UniversalPlugin
+import com.typesafe.sbt.packager.universal.UniversalPlugin.autoImport.{Universal, stage}
+import sbt.Keys._
+import sbt._
 import sbt.internal.util.ManagedLogger
-
-import java.nio.file.{Files, Path, Paths, StandardCopyOption}
-import java.time.{Instant, LocalDateTime, ZoneOffset}
-import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
-import scala.collection.JavaConverters.*
 
 object LocalDeployPlugin extends AutoPlugin {
 
-  private val DEPLOY_PATH_ENV_NAME = "SDP_SCALA_APP_DEPLOY_PATH"
-  private val LINK_PATH_ENV_NAME   = "SDP_SCALA_APP_DEPLOY_LINK_PATH"
+  private val DEPLOY_PATH_ENV_NAME = "LDP_APP_DEPLOY_PATH"
+  private val LINK_PATH_ENV_NAME   = "LDP_APP_DEPLOY_LINK_PATH"
   private val SHARED_DIRS          = List("logs", "conf")
 
-  override def requires: Plugins = JavaAppPackaging && BashStartScriptPlugin
-  override def trigger           = noTrigger
+  override def requires: Plugins = JavaAppPackaging && UniversalPlugin && BashStartScriptPlugin
+  override def trigger           = allRequirements
 
   object autoImport {
+    val LocalDeploy = config("LocalDeploy")
+
     val deploy = inputKey[Unit](
       "Stage and deploy the distribution.\n" +
-        "Usage: deploy <deployPath> <linkPath>\n" +
+        "Usage: LocalDeploy/deploy <deployPath> <linkPath>\n" +
         s"  deployPath — root dir, default value from env $DEPLOY_PATH_ENV_NAME; distributable is placed at <deployPath>/<name>/<name>-<version>-<time>-<commit>/\n" +
         s"               a 'current' symlink at <deployPath>/<name>/current is updated to point to the new release\n" +
         s"  linkPath   — dir where bin/* scripts are symlinked, default value from env $LINK_PATH_ENV_NAME"
     )
     val deployInfo = inputKey[Unit](
       "Show where the installation would take place, where to place, where to link.\n" +
-        "Usage: deployInfo <deployPath> <linkPath>\n" +
+        "Usage: LocalDeploy/deployInfo <deployPath> <linkPath>\n" +
         s"  deployPath — root dir, default value from env $DEPLOY_PATH_ENV_NAME; distributable is placed at <deployPath>/<name>/<name>-<version>-<time>-<commit>/\n" +
         s"  linkPath   — dir where bin/* scripts are symlinked, default value from env $LINK_PATH_ENV_NAME"
     )
     val staleInstallations = inputKey[Unit](
       "Shows stale installations (older than 30 days).\n" +
-        "Usage: staleInstallations <deployPath>\n" +
+        "Usage: LocalDeploy/staleInstallations <deployPath>\n" +
         s"  deployPath — root dir, default value from env $DEPLOY_PATH_ENV_NAME; scans <deployPath>/<name>/\n"
     )
   }
@@ -55,11 +61,15 @@ object LocalDeployPlugin extends AutoPlugin {
         |    addJava "$line"
         |  done < "${app_home}/../conf/jvm-args"
         |fi""".stripMargin
-    },
-    deploy             := deployTaskImpl.evaluated,
-    deployInfo         := deployInfoTaskImpl.evaluated,
-    staleInstallations := staleInstallationsTaskImpl.evaluated
-  )
+    }
+  ) ++
+    inConfig(LocalDeploy)(
+      Seq(
+        deploy             := deployTaskImpl.evaluated,
+        deployInfo         := deployInfoTaskImpl.evaluated,
+        staleInstallations := staleInstallationsTaskImpl.evaluated
+      )
+    )
 
   // ── helpers ──────────────────────────────────────────────────────────────
 
@@ -237,12 +247,12 @@ object LocalDeployPlugin extends AutoPlugin {
   // ── task ─────────────────────────────────────────────────────────────────
 
   private lazy val deployTaskImpl: Def.Initialize[InputTask[Unit]] = Def.inputTask {
-    import sbt.complete.DefaultParsers._
+    import sbt.complete.DefaultParsers.*
 
     val (deployArgOpt, linkPathOpt) = ((Space.? ~> StringBasic.?) ~ (Space.? ~> StringBasic.?)).parsed
 
     val ctx = deployCtx.value
-    import ctx.{stageDir, dirName, pName, log}
+    import ctx.{dirName, log, pName, stageDir}
 
     lazy val deployRootFromEnv = getEnv(DEPLOY_PATH_ENV_NAME, log)
     lazy val linkRootFromEnv   = getEnv(LINK_PATH_ENV_NAME, log)
@@ -269,12 +279,12 @@ object LocalDeployPlugin extends AutoPlugin {
   }
 
   private lazy val deployInfoTaskImpl: Def.Initialize[InputTask[Unit]] = Def.inputTask {
-    import sbt.complete.DefaultParsers._
+    import sbt.complete.DefaultParsers.*
 
     val (deployArgOpt, linkPathOpt) = ((Space.? ~> StringBasic.?) ~ (Space.? ~> StringBasic.?)).parsed
 
     val ctx = deployCtx.value
-    import ctx.{stageDir, log}
+    import ctx.{log, stageDir}
 
     lazy val deployRootFromEnv = getEnv(DEPLOY_PATH_ENV_NAME, log)
     lazy val linkRootFromEnv   = getEnv(LINK_PATH_ENV_NAME, log)
@@ -303,11 +313,11 @@ object LocalDeployPlugin extends AutoPlugin {
   }
 
   private lazy val staleInstallationsTaskImpl: Def.Initialize[InputTask[Unit]] = Def.inputTask {
-    import sbt.complete.DefaultParsers._
+    import sbt.complete.DefaultParsers.*
 
     val deployArgOpt = (Space.? ~> StringBasic.?).parsed
     val ctx          = deployCtx.value
-    import ctx.{pName, log}
+    import ctx.{log, pName}
 
     lazy val deployRootFromEnv = getEnv(DEPLOY_PATH_ENV_NAME, log)
 

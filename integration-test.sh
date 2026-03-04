@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEPLOY_DIR="${1:-/tmp/sdp-deploy}"
-LINKS_DIR="${2:-/tmp/sdp-links}"
+DEPLOY_DIR="${1:-/tmp/ldp-deploy}"
+LINKS_DIR="${2:-/tmp/ldp-links}"
 
 sbt 'set version := "0.0.0-test"' publishLocal
 
-(cd example && sbt "deploy $DEPLOY_DIR $LINKS_DIR")
+(cd example && sbt "LocalDeploy/deploy $DEPLOY_DIR $LINKS_DIR")
 
-cp example/conf/application.conf "$DEPLOY_DIR/sdp-example/conf/"
-cp example/conf/logback.xml      "$DEPLOY_DIR/sdp-example/conf/"
-cp example/conf/jvm-args         "$DEPLOY_DIR/sdp-example/conf/"
+cp example/conf/application.conf "$DEPLOY_DIR/ldp-example/conf/"
+cp example/conf/logback.xml      "$DEPLOY_DIR/ldp-example/conf/"
+cp example/conf/jvm-args         "$DEPLOY_DIR/ldp-example/conf/"
 
-OUTPUT=$("$DEPLOY_DIR/sdp-example/current/bin/sdp-example" hello world 2>&1)
+OUTPUT=$("$DEPLOY_DIR/ldp-example/current/bin/ldp-example" hello world 2>&1)
 echo "--- App output ---"
 echo "$OUTPUT"
 

@@ -4,36 +4,33 @@ Global / onLoad               := (Global / onLoad).value.andThen { s =>
   s
 }
 
-ThisBuild / sbtPlugin := true
-
-ThisBuild / organization     := "io.github.ssstlis"
-ThisBuild / organizationName := "Ssstlis"
-name                         := "sbt-local-deploy"
-
-addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.11.7")
-addSbtPlugin("com.github.sbt" % "sbt-git"             % "2.1.0")
-
-ThisBuild / licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))
-ThisBuild / homepage    := Some(url("https://github.com/Ssstlis/sbt-local-deploy"))
-ThisBuild / description := "Local SBT deployment util."
-ThisBuild / developers := List(Developer("Ssstlis", "Ivan Aristov", "ssstlis@pm.me", url("https://github.com/ssstlis")))
-ThisBuild / scmInfo    := Some(
-  ScmInfo(url("https://github.com/Ssstlis/sbt-local-deploy"), "git@github.com:Ssstlis/sbt-local-deploy.git")
+inThisBuild(
+  List(
+    organization := "io.github.ssstlis",
+    sbtPlugin    := true,
+    version      := {
+      dynverGitDescribeOutput.value match {
+        case Some(out) if out.isSnapshot =>
+          val tag = out.ref.value.stripPrefix("v")
+          s"$tag+${out.commitSuffix.distance}-${out.commitSuffix.sha}-SNAPSHOT"
+        case Some(out) =>
+          out.ref.value.stripPrefix("v")
+        case None =>
+          "0.0.1-SNAPSHOT"
+      }
+    },
+    semanticdbEnabled := true,
+    semanticdbVersion := scalafixSemanticdb.revision,
+    scalacOptions += "-Ywarn-unused-import"
+  )
 )
 
-ThisBuild / version := {
-  dynverGitDescribeOutput.value match {
-    case Some(out) if out.isSnapshot =>
-      val tag = out.ref.value.stripPrefix("v")
-      s"$tag+${out.commitSuffix.distance}-${out.commitSuffix.sha}-SNAPSHOT"
-    case Some(out) =>
-      out.ref.value.stripPrefix("v")
-    case None =>
-      "0.0.1-SNAPSHOT"
-  }
-}
-
-ThisBuild / versionScheme := Some("pvp")
-
-addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
-addCommandAlias("fmtCheck", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
+lazy val root = project
+  .in(file("."))
+  .settings(
+    name := "sbt-local-deploy",
+    addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.11.7"),
+    addSbtPlugin("com.github.sbt" % "sbt-git"             % "2.1.0"),
+    addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt"),
+    addCommandAlias("fmtCheck", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
+  )
