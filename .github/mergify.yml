@@ -29,8 +29,6 @@ pull_request_rules:
         commit_message_template: |
           {{ title }} (#{{ number }})
           
-          {{ body }}
-          
           {% for user in approved_reviews_by %}
           Approved-By: {{user}}
           {% endfor %}
