@@ -1,7 +1,15 @@
 name: Release Drafter
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - edited
 
 permissions:
   contents: write
