@@ -4,9 +4,9 @@ pull_request_rules:
       - author=ssstlis-bot[bot]
     actions:
       request_reviews:
-        users: [ Ssstlis ]
+        users: [Ssstlis]
       label:
-        add: [ dependency-update ]
+        add: [dependency-update]
 
   - name: Merge Steward's PRs
     conditions:
@@ -28,13 +28,10 @@ pull_request_rules:
         method: squash
         commit_message_template: |
           {{ title }} (#{{ number }})
-          
+
           {% for user in approved_reviews_by %}
           Approved-By: {{user}}
           {% endfor %}
 
-  - name: Delete head branch after merge
-    conditions:
-      - merged
-    actions:
-      delete_head_branch:
+merge_protections_settings:
+  reporting_method: check-runs
