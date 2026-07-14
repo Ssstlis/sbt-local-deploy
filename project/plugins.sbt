@@ -4,6 +4,6 @@ addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.14.7")
 
 addSbtPlugin("com.github.sbt" % "sbt-ci-release" % "1.12.0")
 
-addSbtPlugin("org.typelevel" % "sbt-typelevel-sonatype" % "0.8.6")
+addSbtPlugin("org.typelevel" % "sbt-typelevel-sonatype" % "0.8.7")
 
 addDependencyTreePlugin
