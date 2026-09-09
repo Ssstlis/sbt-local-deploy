@@ -30,7 +30,7 @@ lazy val root = project
   .settings(
     name := "sbt-local-deploy",
     addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.11.7"),
-    addSbtPlugin("com.github.sbt" % "sbt-git"             % "2.1.0"),
+    addSbtPlugin("com.github.sbt" % "sbt-git"             % "2.2.0"),
     addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt"),
     addCommandAlias("fmtCheck", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
   )
